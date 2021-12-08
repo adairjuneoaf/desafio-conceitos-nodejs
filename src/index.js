@@ -35,14 +35,16 @@ app.post("/users", (request, response) => {
     return response.status(400).json({ error: "User already exists!" });
   }
 
-  Users.push({
+  const user = {
     id: uuid(),
     name,
     username,
     todos: [],
-  });
+  };
 
-  return response.status(201).json({ Users });
+  Users.push(user);
+
+  return response.status(201).json(user);
 });
 
 app.get("/todos", checksExistsUserAccount, (request, response) => {
@@ -65,7 +67,7 @@ app.post("/todos", checksExistsUserAccount, (request, response) => {
 
   user.todos.push(todosTask);
 
-  return response.status(201).json({ todosTask });
+  return response.status(201).json(todosTask);
 });
 
 app.put("/todos/:id", checksExistsUserAccount, (request, response) => {
@@ -73,35 +75,30 @@ app.put("/todos/:id", checksExistsUserAccount, (request, response) => {
   const { title, deadline } = request.body;
   const { id } = request.params;
 
-  const checkExistsTask = user.todos.find(
-    (checkExistsTask) => checkExistsTask.id === id
-  );
-  if (checkExistsTask) {
-    checkExistsTask.title = title;
-    checkExistsTask.deadline = deadline;
+  const checkExistsTask = user.todos.find((todo) => todo.id === id);
 
-    return response.status(201).json({ success: "Task successfully charged!" });
-  } else {
-    return response.status(404).json({ error: `Task id:${id} not found!` });
+  if (!checkExistsTask) {
+    return response.status(404).json({ error: "Todos not exists!" });
   }
+
+  checkExistsTask.title = title;
+  checkExistsTask.deadline = deadline;
+
+  return response.json(checkExistsTask);
 });
 
 app.patch("/todos/:id/done", checksExistsUserAccount, (request, response) => {
   const { user } = request;
   const { id } = request.params;
 
-  const checkExistsTask = user.todos.find(
-    (checkExistsTask) => checkExistsTask.id === id
-  );
-  if (checkExistsTask) {
-    checkExistsTask.done = true;
+  const checkExistsTask = user.todos.find((todo) => todo.id === id);
 
-    return response
-      .status(200)
-      .json({ success: "Task successfully charged for TRUE!" });
-  } else {
-    return response.status(404).json({ error: `Task id:${id} not found!` });
+  if (!checkExistsTask) {
+    return response.status(404).json({ error: "Todos not exists!" });
   }
+
+  checkExistsTask.done = true;
+  return response.json(checkExistsTask);
 });
 
 app.delete("/todos/:id", checksExistsUserAccount, (request, response) => {
@@ -114,7 +111,7 @@ app.delete("/todos/:id", checksExistsUserAccount, (request, response) => {
   if (checkExistsTask) {
     user.todos.splice(checkExistsTask, 1);
 
-    return response.status(200).json({ success: "Task successfully DELETE!" });
+    return response.status(204).json({ success: "Task successfully DELETE!" });
   } else {
     return response.status(404).json({ error: `Task id:${id} not found!` });
   }
