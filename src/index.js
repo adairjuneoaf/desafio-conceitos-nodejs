@@ -1,22 +1,22 @@
 const express = require("express");
 const cors = require("cors");
 
-const { v4: uuidv4 } = require("uuid");
+const { v1: uuid } = require("uuid");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-const users = [];
+const Users = [];
 
 function checksExistsUserAccount(request, response, next) {
   const { username } = request.headers;
 
-  const user = users.find((user) => user.username === username);
+  const user = Users.find((user) => user.username === username);
 
   if (!user) {
-    return response.status(400).json({ error: "User not found" });
+    return response.status(404).json({ error: "User not found" });
   }
 
   request.user = user;
@@ -27,22 +27,22 @@ function checksExistsUserAccount(request, response, next) {
 app.post("/users", (request, response) => {
   const { name, username } = request.body;
 
-  const checkExistsUserAccount = users.some(
+  const checkExistsUserAccount = Users.some(
     (user) => user.username === username
   );
 
   if (checkExistsUserAccount) {
-    return response.status(404).json({ error: "User already exists!" });
+    return response.status(400).json({ error: "User already exists!" });
   }
 
-  users.push({
-    id: uuidv4(),
+  Users.push({
+    id: uuid(),
     name,
     username,
     todos: [],
   });
 
-  return response.status(201).json({ success: "User successfully created!" });
+  return response.status(201).json({ Users });
 });
 
 app.get("/todos", checksExistsUserAccount, (request, response) => {
@@ -52,21 +52,20 @@ app.get("/todos", checksExistsUserAccount, (request, response) => {
 });
 
 app.post("/todos", checksExistsUserAccount, (request, response) => {
-  const { title } = request.body;
-
   const { user } = request;
+  const { title, deadline } = request.body;
 
   const todosTask = {
-    id: uuidv4(),
+    id: uuid(),
     title,
     done: false,
-    deadline: new Date(),
+    deadline: new Date(deadline),
     created_at: new Date(),
   };
 
   user.todos.push(todosTask);
 
-  return response.status(200).json({ success: "Task launched successfully!" });
+  return response.status(201).json({ todosTask });
 });
 
 app.put("/todos/:id", checksExistsUserAccount, (request, response) => {
@@ -81,7 +80,7 @@ app.put("/todos/:id", checksExistsUserAccount, (request, response) => {
     checkExistsTask.title = title;
     checkExistsTask.deadline = deadline;
 
-    return response.status(200).json({ success: "Task successfully charged!" });
+    return response.status(201).json({ success: "Task successfully charged!" });
   } else {
     return response.status(404).json({ error: `Task id:${id} not found!` });
   }
